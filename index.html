@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Nós Dois — Finanças</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151a;
+    --bg-elev:#1a1f26;
+    --bg-elev2:#212831;
+    --line:#2a323d;
+    --text:#e9edf1;
+    --muted:#8a97a6;
+    --teal:#2dd4bf;
+    --teal-soft:rgba(45,212,191,.14);
+    --amber:#f0b849;
+    --amber-soft:rgba(240,184,73,.14);
+    --coral:#f2765c;
+    --coral-soft:rgba(242,118,92,.14);
+    --violet:#9d8cf2;
+    --violet-soft:rgba(157,140,242,.14);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+
+  /* ---------- Login ---------- */
+  #login-screen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .login-card{
+    width:100%;max-width:380px;background:var(--bg-elev);border:1px solid var(--line);
+    border-radius:var(--radius);padding:32px 28px;
+  }
+  .login-card h1{font-size:22px;margin:0 0 4px;font-weight:800;letter-spacing:-.01em;}
+  .login-card p.sub{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+  .field input,.field select{
+    width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font-size:14.5px;
+  }
+  .field input:focus,.field select:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal);}
+  .btn-primary{
+    width:100%;padding:12px;border-radius:9px;border:none;background:var(--teal);
+    color:#08201c;font-weight:700;font-size:14.5px;margin-top:6px;
+  }
+  .btn-primary:hover{filter:brightness(1.06);}
+  .login-error{color:var(--coral);font-size:13px;margin-top:10px;min-height:16px;}
+  .login-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--muted);}
+  .login-toggle button{background:none;border:none;color:var(--teal);font-size:13px;padding:0;}
+
+  /* ---------- App shell ---------- */
+  #app{display:none;min-height:100vh;}
+  .shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;}
+  @media (max-width:820px){ .shell{grid-template-columns:1fr;} }
+
+  .sidebar{
+    background:var(--bg-elev);border-right:1px solid var(--line);
+    padding:22px 16px;display:flex;flex-direction:column;gap:4px;
+  }
+  @media (max-width:820px){
+    .sidebar{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;
+      justify-content:space-around;padding:8px 6px;border-right:none;border-top:1px solid var(--line);z-index:20;}
+  }
+  .brand{font-weight:800;font-size:17px;margin:0 6px 22px;letter-spacing:-.01em;}
+  @media (max-width:820px){ .brand{display:none;} }
+  .nav-item{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;
+    color:var(--muted);background:none;border:none;text-align:left;font-size:14px;font-weight:600;
+  }
+  .nav-item.active{background:var(--teal-soft);color:var(--teal);}
+  @media (max-width:820px){
+    .nav-item{flex-direction:column;gap:2px;font-size:10.5px;padding:6px 4px;flex:1;text-align:center;}
+  }
+  .nav-icon{width:18px;height:18px;flex-shrink:0;}
+
+  .main{padding:26px 28px 90px;max-width:1040px;width:100%;}
+  @media (max-width:820px){ .main{padding:18px 14px 90px;} }
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
+  .topbar h2{font-size:20px;margin:0;font-weight:800;letter-spacing:-.01em;}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;}
+  .seg{display:flex;background:var(--bg-elev);border:1px solid var(--line);border-radius:9px;padding:3px;}
+  .seg button{background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;border-radius:7px;}
+  .seg button.active{background:var(--bg-elev2);color:var(--text);}
+  .month-picker{display:flex;align-items:center;gap:6px;background:var(--bg-elev);border:1px solid var(--line);
+    border-radius:9px;padding:4px 4px 4px 12px;font-size:14px;font-weight:600;}
+  .month-picker button{background:none;border:none;color:var(--muted);font-size:15px;padding:6px 10px;border-radius:7px;}
+  .month-picker button:hover{background:var(--bg-elev2);color:var(--text);}
+
+  .card{background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .card h3{margin:0 0 14px;font-size:14px;color:var(--muted);font-weight:600;}
+
+  /* Cycle bar */
+  .cycle-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:6px;}
+  .cycle-amount{font-size:30px;font-weight:800;letter-spacing:-.01em;}
+  .cycle-amount .of{font-size:15px;color:var(--muted);font-weight:600;}
+  .cycle-track{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--line);}
+  .cycle-fill{height:100%;border-radius:6px;background:var(--teal);transition:width .4s ease;}
+  .cycle-fill.warn{background:var(--amber);}
+  .cycle-fill.over{background:var(--coral);}
+  .cycle-note{font-size:13px;color:var(--muted);margin-top:8px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:700px){ .grid2{grid-template-columns:1fr;} }
+
+  .stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row .val{font-weight:700;}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;}
+  .badge.ok{background:var(--teal-soft);color:var(--teal);}
+  .badge.warn{background:var(--amber-soft);color:var(--amber);}
+  .badge.over{background:var(--coral-soft);color:var(--coral);}
+
+  .cat-bar-row{margin-bottom:12px;}
+  .cat-bar-row .lbl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
+  .cat-bar-row .lbl .name{color:var(--text);font-weight:600;}
+  .cat-bar-row .lbl .amt{color:var(--muted);}
+  .cat-track{height:7px;background:var(--bg);border-radius:5px;overflow:hidden;}
+  .cat-fill{height:100%;border-radius:5px;}
+
+  .radar-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .radar-item:last-child{border-bottom:none;}
+  .radar-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+  .radar-item .t1{font-weight:600;}
+  .radar-item .t2{color:var(--muted);font-size:12.5px;margin-top:2px;}
+
+  /* Futuro */
+  .future-group{margin-bottom:18px;}
+  .future-group-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .future-group-head .m{font-weight:700;font-size:14px;text-transform:capitalize;}
+  .future-group-head .t{font-weight:700;font-size:14px;}
+  .future-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:14px;}
+  .future-row .desc{display:flex;flex-direction:column;}
+  .future-row .desc .d1{font-weight:600;}
+  .future-row .desc .d2{font-size:12px;color:var(--muted);margin-top:2px;}
+  .pill{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--bg-elev2);color:var(--muted);}
+
+  /* Lançamentos */
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .btn{padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--bg-elev2);color:var(--text);font-size:13.5px;font-weight:600;}
+  .btn:hover{border-color:var(--teal);}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#08201c;}
+  .btn.ghost{background:none;}
+  input[type=file]{display:none;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:0 8px 8px;border-bottom:1px solid var(--line);}
+  td{padding:10px 8px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  td.amt{font-weight:700;text-align:right;font-family:'IBM Plex Mono',monospace;}
+  .row-actions button{background:none;border:none;color:var(--muted);font-size:13px;padding:4px 6px;}
+  .row-actions button:hover{color:var(--coral);}
+  .who-tag{font-size:10.5px;padding:2px 6px;border-radius:5px;font-weight:700;}
+
+  /* Modal / form */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;align-items:center;justify-content:center;padding:16px;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);padding:24px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;}
+  .modal h3{margin:0 0 18px;font-size:16px;}
+  .modal-close{float:right;background:none;border:none;color:var(--muted);font-size:18px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .form-grid .full{grid-column:1/-1;}
+  .checkbox-row{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);margin-top:4px;}
+
+  .empty{text-align:center;padding:36px 16px;color:var(--muted);font-size:14px;}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg-elev2);
+    border:1px solid var(--line);padding:10px 18px;border-radius:9px;font-size:13.5px;z-index:60;display:none;}
+  @media (min-width:821px){ .toast{bottom:26px;} }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Nós Dois</h1>
+    <p class="sub">Painel financeiro do casal — dados 100% compartilhados.</p>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" autocomplete="email" placeholder="voce@exemplo.com">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <div class="field" id="signup-name-field" style="display:none">
+      <label>Como você quer aparecer? (ex: seu primeiro nome)</label>
+      <input type="text" id="signup-name" placeholder="Seu nome">
+    </div>
+    <button class="btn-primary" id="login-btn">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-toggle">
+      <span id="toggle-text">Ainda não tem conta?</span>
+      <button id="toggle-mode">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+<div class="shell">
+  <nav class="sidebar">
+    <div class="brand">Nós Dois</div>
+    <button class="nav-item active" data-view="dashboard">📊 <span>Visão do mês</span></button>
+    <button class="nav-item" data-view="futuro">📅 <span>Futuro</span></button>
+    <button class="nav-item" data-view="lancamentos">📝 <span>Lançamentos</span></button>
+    <button class="nav-item" data-view="ajustes">⚙️ <span>Ajustes</span></button>
+  </nav>
+
+  <main class="main">
+
+    <div class="topbar">
+      <h2 id="view-title">Visão do mês</h2>
+      <div class="controls">
+        <div class="month-picker" id="month-picker-wrap">
+          <button id="month-prev">‹</button>
+          <span id="month-label">Setembro 2026</span>
+          <button id="month-next">›</button>
+        </div>
+        <div class="seg" id="profile-seg">
+          <button class="active" data-p="ambos">Ambos</button>
+          <button data-p="p1">Pessoa 1</button>
+          <button data-p="p2">Pessoa 2</button>
+          <button data-p="terceiros">Terceiros</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- DASHBOARD ---- -->
+    <section id="view-dashboard">
+      <div class="card">
+        <h3>Comprometido no mês (cartão + contas)</h3>
+        <div class="cycle-top">
+          <div class="cycle-amount"><span id="cycle-spent">R$ 0,00</span> <span class="of" id="cycle-of">de R$ 0,00 previsto</span></div>
+          <span class="badge ok" id="cycle-badge">dentro do previsto</span>
+        </div>
+        <div class="cycle-track"><div class="cycle-fill" id="cycle-fill" style="width:0%"></div></div>
+        <div class="cycle-note" id="cycle-note">Fatura fecha no fim do mês — isso é o que já está garantido para pagar.</div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Categorias — 50/30/20</h3>
+          <div id="cat-breakdown"></div>
+        </div>
+        <div class="card">
+          <h3>Radar de oportunidades</h3>
+          <div id="opportunity-radar"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Resumo por pessoa</h3>
+        <div id="per-person-summary"></div>
+      </div>
+    </section>
+
+    <!-- ---- FUTURO ---- -->
+    <section id="view-futuro" style="display:none">
+      <div class="card" style="padding-bottom:8px">
+        <div class="seg" style="margin-bottom:4px">
+          <button class="active" data-range="mes">Este mês</button>
+          <button data-range="ano">Este ano</button>
+          <button data-range="tudo">Tudo</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Total comprometido no período <span id="future-total" class="mono" style="color:var(--text);font-weight:800;font-size:16px;float:right"></span></h3>
+      </div>
+      <div id="future-list"></div>
+    </section>
+
+    <!-- ---- LANÇAMENTOS ---- -->
+    <section id="view-lancamentos" style="display:none">
+      <div class="toolbar">
+        <button class="btn primary" id="btn-new-entry">+ Novo lançamento</button>
+        <button class="btn" id="btn-import">⇪ Importar CSV</button>
+        <input type="file" id="file-import" accept=".csv">
+        <button class="btn" id="btn-import-inter">🏦 Importar fatura Inter</button>
+        <input type="file" id="file-import-inter" accept=".csv">
+        <button class="btn ghost" id="btn-whatsapp-info">💬 Lançar pelo WhatsApp</button>
+      </div>
+      <div class="card">
+        <table id="entries-table">
+          <thead>
+            <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Quem</th><th style="text-align:right">Valor</th><th></th></tr>
+          </thead>
+          <tbody id="entries-tbody"></tbody>
+        </table>
+        <div class="empty" id="entries-empty" style="display:none">Nenhum lançamento neste filtro ainda.</div>
+      </div>
+    </section>
+
+    <!-- ---- AJUSTES ---- -->
+    <section id="view-ajustes" style="display:none">
+      <div class="card">
+        <h3>Renda e nomes</h3>
+        <div class="form-grid">
+          <div class="field"><label>Renda combinada do casal</label><input type="number" id="cfg-renda" step="0.01"></div>
+          <div class="field"><label>Nome — Pessoa 1</label><input type="text" id="cfg-nome-p1"></div>
+          <div class="field"><label>Nome — Pessoa 2</label><input type="text" id="cfg-nome-p2"></div>
+        </div>
+        <button class="btn primary" id="btn-save-cfg" style="margin-top:14px">Salvar</button>
+      </div>
+      <div class="card">
+        <h3>Categorias e orçamento mensal</h3>
+        <p style="font-size:13px;color:var(--muted);margin:-6px 0 14px">
+          Defina as categorias do jeito que fizer sentido para vocês, e o valor mensal que cada uma pode gastar.
+          A Visão do mês passa a comparar o gasto real de cada categoria contra esse orçamento.
+        </p>
+        <div id="categorias-list"></div>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <button class="btn" id="btn-add-categoria">+ Nova categoria</button>
+          <button class="btn primary" id="btn-save-categorias">Salvar categorias</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Segurança da conta</h3>
+        <p style="font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 12px">
+          Este painel usa o mesmo login e banco de dados do casal (Firebase Authentication + Firestore).
+          Só os e-mails autorizados por vocês dois conseguem entrar, e os dados trafegam sempre criptografados (HTTPS).
+          As regras do banco de dados (Firestore Rules) devem restringir a leitura e escrita apenas aos dois UIDs do casal —
+          veja o guia de implantação enviado junto com este arquivo.
+        </p>
+        <button class="btn ghost" id="btn-logout">Sair da conta</button>
+      </div>
+    </section>
+
+
+  </main>
+</div>
+</div>
+
+<!-- ---- MODAL: novo lançamento ---- -->
+<div class="overlay" id="entry-overlay">
+  <div class="modal">
+    <button class="modal-close" id="entry-close">✕</button>
+    <h3 id="entry-modal-title">Novo lançamento</h3>
+    <div class="form-grid">
+      <div class="field full"><label>Descrição</label><input type="text" id="f-desc" placeholder="Ex: Supermercado, Aluguel..."></div>
+      <div class="field"><label>Valor (R$)</label><input type="number" id="f-valor" step="0.01" placeholder="0,00"></div>
+      <div class="field"><label>Data</label><input type="date" id="f-data"></div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="f-categoria"></select>
+      </div>
+      <div class="field">
+        <label>Quem</label>
+        <select id="f-pessoa">
+          <option value="ambos">Ambos</option>
+          <option value="p1">Pessoa 1</option>
+          <option value="p2">Pessoa 2</option>
+          <option value="terceiros">Terceiros (cartão emprestado)</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>Parcelas (deixe 1 se for à vista)</label>
+        <input type="number" id="f-parcelas" value="1" min="1">
+      </div>
+      <div class="checkbox-row full">
+        <input type="checkbox" id="f-recorrente"> <label for="f-recorrente">Repete todo mês (conta fixa)</label>
+      </div>
+    </div>
+    <button class="btn primary" id="btn-save-entry" style="width:100%;margin-top:16px">Salvar lançamento</button>
+  </div>
+</div>
+
+<!-- ---- MODAL: WhatsApp info ---- -->
+<div class="overlay" id="whatsapp-overlay">
+  <div class="modal">
+    <button class="modal-close" id="whatsapp-close">✕</button>
+    <h3>Lançar pelo WhatsApp</h3>
+    <p style="font-size:13.5px;color:var(--muted);line-height:1.65">
+      A forma mais rápida sem custo é instalar este painel como atalho no celular (toque em "Adicionar à tela inicial")
+      e usar o botão "+ Novo lançamento" — leva menos de 10 segundos, o mesmo tempo de mandar uma mensagem.
+      <br><br>
+      Um bot de WhatsApp de verdade (você manda "50 mercado" e ele lança sozinho) é possível, mas exige um pequeno
+      servidor sempre ligado recebendo mensagens da API do WhatsApp — isso tem um custo mínimo mensal ou o uso do
+      plano pago do Firebase (Blaze), mesmo ficando dentro da faixa gratuita de uso. Quando vocês estiverem prontos
+      para esse passo, é só pedir que eu monte esse bot.
+    </p>
+  </div>
+</div>
+
+<!-- ---- MODAL: novos estabelecimentos (decidir fixo/variável) ---- -->
+<div class="overlay" id="estab-overlay">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" id="estab-close">✕</button>
+    <h3>Novos estabelecimentos encontrados</h3>
+    <p style="font-size:13px;color:var(--muted);margin:-8px 0 14px">
+      "Fixo" classifica sozinho para sempre. "Variável" (ex: Pix/PicPay usado pra coisas diferentes) mostra cada
+      gasto pra você escolher a categoria toda vez.
+    </p>
+    <div id="estab-list"></div>
+    <button class="btn primary" id="btn-confirm-estab" style="width:100%;margin-top:16px">Continuar</button>
+  </div>
+</div>
+
+<!-- ---- MODAL: categorizar gastos de estabelecimentos variáveis ---- -->
+<div class="overlay" id="estabvar-overlay">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" id="estabvar-close">✕</button>
+    <h3>Categorize cada gasto</h3>
+    <p style="font-size:13px;color:var(--muted);margin:-8px 0 14px">
+      Estes estabelecimentos são variáveis — cada lançamento pode ter uma finalidade diferente.
+    </p>
+    <div id="estabvar-list" style="max-height:50vh;overflow-y:auto"></div>
+    <button class="btn primary" id="btn-confirm-estabvar" style="width:100%;margin-top:16px">Salvar e importar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===================== FIREBASE ===================== -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+  createUserWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, doc, setDoc, getDoc, getDocs,
+  deleteDoc, query, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+/* =========================================================================
+   1) COLOQUE AQUI A CONFIGURAÇÃO DO SEU PROJETO FIREBASE
+   (Firebase Console → Configurações do projeto → Seus apps → SDK setup)
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDD1EAAO6wrSKj2mDtyNcnJz9mLI7hW_kg",
+  authDomain: "financas-pessoais-1a8c2.firebaseapp.com",
+  projectId: "financas-pessoais-1a8c2",
+  storageBucket: "financas-pessoais-1a8c2.firebasestorage.app",
+  messagingSenderId: "25058702865",
+  appId: "1:25058702865:web:aaf8a891aa60616ddfe3b0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* =========================================================================
+   2) ESTADO GLOBAL
+   ========================================================================= */
+let entries = [];         // todos os lançamentos do casal
+let cfg = {                // configurações do casal
+  renda: 0, nomeP1: "Pessoa 1", nomeP2: "Pessoa 2"
+};
+let currentProfile = "ambos";  // ambos | p1 | p2
+let currentMonth = new Date();
+let currentFutureRange = "mes";
+let editingEntryId = null;
+let unsubEntries = null;
+let categorias = [   // lista viva, carregada/gravada em /config/categorias
+  {id:'essencial', nome:'Essenciais', orcamento:0},
+  {id:'vida', nome:'Estilo de vida', orcamento:0},
+  {id:'investimento', nome:'Investimentos', orcamento:0},
+  {id:'divida', nome:'Dívidas', orcamento:0}
+];
+
+const monthNames = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const catColorPalette = ['var(--teal)','var(--violet)','var(--amber)','var(--coral)','#5b9bd5','#e07a9e','#8bc34a','#ff8a65'];
+function catNome(id){ const c = categorias.find(x=>x.id===id); return c ? c.nome : (id || '—'); }
+function catCor(id){ const idx = categorias.findIndex(x=>x.id===id); return catColorPalette[(idx>=0?idx:0) % catColorPalette.length]; }
+function buildCategoriaOptionsHTML(selectedId){
+  return categorias.map(c=>`<option value="${c.id}" ${c.id===selectedId?'selected':''}>${c.nome}</option>`).join('');
+}
+const fmt = (n)=> (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+/* =========================================================================
+   3) AUTENTICAÇÃO
+   ========================================================================= */
+let mode = "login";
+document.getElementById('toggle-mode').addEventListener('click', ()=>{
+  mode = mode === "login" ? "signup" : "login";
+  document.getElementById('signup-name-field').style.display = mode === "signup" ? "block" : "none";
+  document.getElementById('toggle-text').textContent = mode === "login" ? "Ainda não tem conta?" : "Já tem conta?";
+  document.getElementById('toggle-mode').textContent = mode === "login" ? "Criar conta" : "Entrar";
+});
+
+document.getElementById('login-btn').addEventListener('click', async ()=>{
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = "";
+  if(!email || !pass){ errEl.textContent = "Preencha e-mail e senha."; return; }
+  try{
+    if(mode === "login"){
+      await signInWithEmailAndPassword(auth, email, pass);
+    } else {
+      const name = document.getElementById('signup-name').value.trim() || "Pessoa";
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await setDoc(doc(db, "casal", "membros", "lista", cred.user.uid), { nome: name, email });
+    }
+  }catch(e){
+    errEl.textContent = traduzErro(e.code);
+  }
+});
+
+function traduzErro(code){
+  const map = {
+    'auth/invalid-email':'E-mail inválido.',
+    'auth/user-not-found':'Conta não encontrada.',
+    'auth/wrong-password':'Senha incorreta.',
+    'auth/invalid-credential':'E-mail ou senha incorretos.',
+    'auth/email-already-in-use':'Este e-mail já tem uma conta.',
+    'auth/weak-password':'A senha precisa ter pelo menos 6 caracteres.'
+  };
+  return map[code] || 'Não foi possível entrar. Tente novamente.';
+}
+
+document.getElementById('btn-logout').addEventListener('click', ()=> signOut(auth));
+
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadConfig();
+    listenEntries();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    if(unsubEntries) unsubEntries();
+  }
+});
+
+/* =========================================================================
+   4) DADOS — Firestore
+   Estrutura: /lancamentos/{id}, /config/casal, /config/categorias
+   ========================================================================= */
+async function loadConfig(){
+  try{
+    const snap = await getDoc(doc(db, "config", "casal"));
+    if(snap.exists()){
+      cfg = {...cfg, ...snap.data()};
+      document.getElementById('cfg-renda').value = cfg.renda || "";
+      document.getElementById('cfg-nome-p1').value = cfg.nomeP1 || "";
+      document.getElementById('cfg-nome-p2').value = cfg.nomeP2 || "";
+      document.querySelectorAll('#profile-seg button')[1].textContent = cfg.nomeP1 || "Pessoa 1";
+      document.querySelectorAll('#profile-seg button')[2].textContent = cfg.nomeP2 || "Pessoa 2";
+    }
+  }catch(e){ console.error(e); }
+  await loadCategorias();
+  render();
+}
+
+document.getElementById('btn-save-cfg').addEventListener('click', async ()=>{
+  cfg.renda = parseFloat(document.getElementById('cfg-renda').value) || 0;
+  cfg.nomeP1 = document.getElementById('cfg-nome-p1').value || "Pessoa 1";
+  cfg.nomeP2 = document.getElementById('cfg-nome-p2').value || "Pessoa 2";
+  await setDoc(doc(db,"config","casal"), cfg);
+  document.querySelectorAll('#profile-seg button')[1].textContent = cfg.nomeP1;
+  document.querySelectorAll('#profile-seg button')[2].textContent = cfg.nomeP2;
+  showToast("Ajustes salvos.");
+  render();
+});
+
+async function loadCategorias(){
+  try{
+    const snap = await getDoc(doc(db, "config", "categorias"));
+    if(snap.exists() && Array.isArray(snap.data().lista) && snap.data().lista.length > 0){
+      categorias = snap.data().lista;
+    } else {
+      // primeira vez: sugere valores iniciais a partir da renda (editável depois)
+      const renda = cfg.renda || 0;
+      categorias = [
+        {id:'essencial', nome:'Essenciais', orcamento: renda ? +(renda*0.5).toFixed(2) : 0},
+        {id:'vida', nome:'Estilo de vida', orcamento: renda ? +(renda*0.3).toFixed(2) : 0},
+        {id:'investimento', nome:'Investimentos', orcamento: renda ? +(renda*0.1).toFixed(2) : 0},
+        {id:'divida', nome:'Dívidas', orcamento: renda ? +(renda*0.1).toFixed(2) : 0}
+      ];
+      await setDoc(doc(db,"config","categorias"), { lista: categorias });
+    }
+  }catch(e){ console.error(e); }
+  renderCategoriasAjustes();
+}
+
+function renderCategoriasAjustes(){
+  const el = document.getElementById('categorias-list');
+  if(!el) return;
+  el.innerHTML = categorias.map((c,i)=>`
+    <div class="form-grid" style="margin-bottom:6px">
+      <div class="field"><label>Nome</label><input type="text" data-catidx="${i}" data-catfield="nome" value="${c.nome}"></div>
+      <div class="field"><label>Orçamento mensal (R$)</label><input type="number" step="0.01" data-catidx="${i}" data-catfield="orcamento" value="${c.orcamento||0}"></div>
+    </div>
+    <button class="btn ghost" data-removecat="${i}" style="margin-bottom:16px;font-size:12.5px">Remover esta categoria</button>
+  `).join('');
+  el.querySelectorAll('[data-removecat]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      categorias.splice(parseInt(btn.dataset.removecat),1);
+      renderCategoriasAjustes();
+    });
+  });
+}
+
+document.getElementById('btn-add-categoria').addEventListener('click', ()=>{
+  categorias.push({id:'cat_'+Date.now().toString(36), nome:'Nova categoria', orcamento:0});
+  renderCategoriasAjustes();
+});
+
+document.getElementById('btn-save-categorias').addEventListener('click', async ()=>{
+  document.querySelectorAll('#categorias-list input[data-catfield]').forEach(inp=>{
+    const idx = parseInt(inp.dataset.catidx);
+    const field = inp.dataset.catfield;
+    categorias[idx][field] = field === 'orcamento' ? (parseFloat(inp.value)||0) : (inp.value || 'Categoria');
+  });
+  await setDoc(doc(db,"config","categorias"), { lista: categorias });
+  showToast("Categorias salvas.");
+  render();
+});
+
+function listenEntries(){
+  const q = query(collection(db, "lancamentos"));
+  unsubEntries = onSnapshot(q, (snap)=>{
+    entries = [];
+    snap.forEach(d=> entries.push({id:d.id, ...d.data()}));
+    render();
+  }, (err)=> console.error(err));
+}
+
+/* Gera todas as ocorrências de um lançamento (fixo/parcelado) até N meses à frente */
+function expandOccurrences(e, monthsAhead=36){
+  const out = [];
+  const base = new Date(e.data);
+  if(e.recorrente){
+    for(let i=0;i<monthsAhead;i++){
+      const d = new Date(base.getFullYear(), base.getMonth()+i, base.getDate());
+      out.push({...e, dataOcorrencia:d, parcelaInfo:null});
+    }
+  } else if(e.parcelas && e.parcelas > 1){
+    for(let i=0;i<e.parcelas;i++){
+      const d = new Date(base.getFullYear(), base.getMonth()+i, base.getDate());
+      out.push({...e, dataOcorrencia:d, parcelaInfo:`${i+1}/${e.parcelas}`});
+    }
+  } else {
+    out.push({...e, dataOcorrencia:base, parcelaInfo:null});
+  }
+  return out;
+}
+
+function allOccurrences(){
+  let out = [];
+  entries.forEach(e=> out = out.concat(expandOccurrences(e)));
+  if(currentProfile === "terceiros"){
+    out = out.filter(o => o.pessoa === "terceiros");
+  } else if(currentProfile === "ambos"){
+    out = out.filter(o => o.pessoa !== "terceiros"); // não é gasto do casal
+  } else {
+    out = out.filter(o => o.pessoa === currentProfile || o.pessoa === "ambos");
+  }
+  return out;
+}
+
+/* =========================================================================
+   5) NAVEGAÇÃO
+   ========================================================================= */
+const views = ["dashboard","futuro","lancamentos","ajustes"];
+const titles = {dashboard:"Visão do mês", futuro:"Futuro", lancamentos:"Lançamentos", ajustes:"Ajustes"};
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const v = btn.dataset.view;
+    views.forEach(x=> document.getElementById('view-'+x).style.display = x===v ? 'block' : 'none');
+    document.getElementById('view-title').textContent = titles[v];
+    document.getElementById('month-picker-wrap').style.display = v==='dashboard' ? 'flex' : 'none';
+    render();
+  });
+});
+
+document.querySelectorAll('#profile-seg button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#profile-seg button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentProfile = btn.dataset.p;
+    render();
+  });
+});
+
+document.getElementById('month-prev').addEventListener('click', ()=>{
+  currentMonth.setMonth(currentMonth.getMonth()-1); render();
+});
+document.getElementById('month-next').addEventListener('click', ()=>{
+  currentMonth.setMonth(currentMonth.getMonth()+1); render();
+});
+
+document.querySelectorAll('[data-range]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-range]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFutureRange = btn.dataset.range;
+    renderFuturo();
+  });
+});
+
+/* =========================================================================
+   6) RENDER — DASHBOARD (mês selecionado)
+   ========================================================================= */
+function render(){
+  document.getElementById('month-label').textContent =
+    monthNames[currentMonth.getMonth()].replace(/^\w/,c=>c.toUpperCase()) + " " + currentMonth.getFullYear();
+  renderDashboard();
+  renderFuturo();
+  renderLancamentos();
+}
+
+function occurrencesInMonth(occs, year, month){
+  return occs.filter(o => o.dataOcorrencia.getFullYear()===year && o.dataOcorrencia.getMonth()===month);
+}
+
+function renderDashboard(){
+  const occs = allOccurrences();
+  const y = currentMonth.getFullYear(), m = currentMonth.getMonth();
+  const monthOccs = occurrencesInMonth(occs, y, m);
+  const total = monthOccs.reduce((s,o)=> s+ (parseFloat(o.valor)||0), 0);
+  const previsto = cfg.renda || 0;
+
+  document.getElementById('cycle-spent').textContent = fmt(total);
+  document.getElementById('cycle-of').textContent = previsto>0 ? `de ${fmt(previsto)} de renda` : '(defina a renda em Ajustes)';
+  const pct = previsto>0 ? Math.min((total/previsto)*100,100) : 0;
+  const fillEl = document.getElementById('cycle-fill');
+  fillEl.style.width = pct+'%';
+  fillEl.className = 'cycle-fill' + (total>previsto ? ' over' : (pct>85 ? ' warn':''));
+  const badge = document.getElementById('cycle-badge');
+  if(previsto>0 && total>previsto){ badge.className='badge over'; badge.textContent='acima da renda'; }
+  else if(pct>85){ badge.className='badge warn'; badge.textContent='perto do limite'; }
+  else { badge.className='badge ok'; badge.textContent='dentro do previsto'; }
+  document.getElementById('cycle-note').textContent =
+    `${monthOccs.length} lançamento(s) previstos para ${monthNames[m]} — inclui contas fixas e parcelas em andamento.`;
+
+  // Categorias — gasto real vs. orçamento definido em Ajustes
+  const catTotals = {};
+  monthOccs.forEach(o=> catTotals[o.categoria] = (catTotals[o.categoria]||0) + (parseFloat(o.valor)||0));
+  const catEl = document.getElementById('cat-breakdown');
+  catEl.innerHTML = categorias.map(c=>{
+    const val = catTotals[c.id]||0;
+    const orc = c.orcamento||0;
+    const barPct = orc>0 ? Math.min((val/orc)*100,100) : (val>0?100:0);
+    return `
+      <div class="cat-bar-row">
+        <div class="lbl"><span class="name">${c.nome}</span><span class="amt">${fmt(val)}${orc>0?` / ${fmt(orc)}`:''}</span></div>
+        <div class="cat-track"><div class="cat-fill" style="width:${barPct}%;background:${catCor(c.id)}"></div></div>
+      </div>`;
+  }).join('') || '<div class="empty">Nenhuma categoria cadastrada — configure em Ajustes.</div>';
+
+  // Radar de oportunidades
+  const radarEl = document.getElementById('opportunity-radar');
+  const items = [];
+  if(previsto>0 && total>previsto) items.push({c:'var(--coral)', t1:'Gastos acima da renda do mês', t2:`Faltam ${fmt(total-previsto)} para cobrir tudo que já está previsto.`});
+  categorias.forEach(c=>{
+    const val = catTotals[c.id]||0;
+    const orc = c.orcamento||0;
+    if(orc>0 && val>orc) items.push({c:catCor(c.id).replace('var(','').replace(')',''), t1:`${c.nome} passou do orçamento`, t2:`${fmt(val)} contra um orçamento de ${fmt(orc)}.`});
+  });
+  if(items.length===0) items.push({c:'var(--teal)', t1:'Nenhum alerta este mês', t2:'Os gastos previstos estão dentro dos orçamentos definidos.'});
+  radarEl.innerHTML = items.map(i=>`
+    <div class="radar-item">
+      <div class="radar-dot" style="background:${i.c}"></div>
+      <div><div class="t1">${i.t1}</div><div class="t2">${i.t2}</div></div>
+    </div>`).join('');
+
+  // Resumo por pessoa (sempre consolidado aqui, independente do toggle)
+  const allOccs = entries.reduce((acc,e)=> acc.concat(expandOccurrences(e)), []);
+  const monthAll = occurrencesInMonth(allOccs, y, m);
+  const byPerson = {p1:0, p2:0, ambos:0, terceiros:0};
+  monthAll.forEach(o=> byPerson[o.pessoa] = (byPerson[o.pessoa]||0) + (parseFloat(o.valor)||0));
+  const personEl = document.getElementById('per-person-summary');
+  personEl.innerHTML = `
+    <div class="stat-row"><span>${cfg.nomeP1}</span><span class="val">${fmt(byPerson.p1)}</span></div>
+    <div class="stat-row"><span>${cfg.nomeP2}</span><span class="val">${fmt(byPerson.p2)}</span></div>
+    <div class="stat-row"><span>Compartilhado (ambos)</span><span class="val">${fmt(byPerson.ambos)}</span></div>
+    <div class="stat-row"><span>Total do casal</span><span class="val">${fmt(byPerson.p1+byPerson.p2+byPerson.ambos)}</span></div>
+    ${byPerson.terceiros>0?`<div class="stat-row" style="color:var(--muted)"><span>Terceiros (cartão emprestado, a receber)</span><span class="val">${fmt(byPerson.terceiros)}</span></div>`:''}
+  `;
+}
+
+/* =========================================================================
+   7) RENDER — FUTURO
+   ========================================================================= */
+function renderFuturo(){
+  const occs = allOccurrences();
+  const now = new Date(); now.setHours(0,0,0,0);
+  let filtered = occs.filter(o=> o.dataOcorrencia >= now);
+  if(currentFutureRange === "mes"){
+    filtered = filtered.filter(o=> o.dataOcorrencia.getMonth()===now.getMonth() && o.dataOcorrencia.getFullYear()===now.getFullYear());
+  } else if(currentFutureRange === "ano"){
+    filtered = filtered.filter(o=> o.dataOcorrencia.getFullYear()===now.getFullYear());
+  }
+  filtered.sort((a,b)=> a.dataOcorrencia - b.dataOcorrencia);
+
+  const total = filtered.reduce((s,o)=> s+(parseFloat(o.valor)||0),0);
+  document.getElementById('future-total').textContent = fmt(total);
+
+  const groups = {};
+  filtered.forEach(o=>{
+    const key = `${o.dataOcorrencia.getFullYear()}-${o.dataOcorrencia.getMonth()}`;
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(o);
+  });
+
+  const listEl = document.getElementById('future-list');
+  if(filtered.length===0){ listEl.innerHTML = '<div class="card"><div class="empty">Nada previsto neste período.</div></div>'; return; }
+
+  listEl.innerHTML = Object.keys(groups).sort().map(key=>{
+    const [y,m] = key.split('-').map(Number);
+    const rows = groups[key];
+    const subtotal = rows.reduce((s,o)=>s+(parseFloat(o.valor)||0),0);
+    return `<div class="card future-group">
+      <div class="future-group-head"><span class="m">${monthNames[m]} ${y}</span><span class="t">${fmt(subtotal)}</span></div>
+      ${rows.map(o=>`
+        <div class="future-row">
+          <div class="desc">
+            <span class="d1">${o.descricao}</span>
+            <span class="d2">${catNome(o.categoria)} ${o.parcelaInfo?`· parcela ${o.parcelaInfo}`:''} ${o.recorrente?'· fixo':''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="pill">${o.pessoa==='p1'?cfg.nomeP1:o.pessoa==='p2'?cfg.nomeP2:o.pessoa==='terceiros'?'Terceiros':'Ambos'}</span>
+            <strong class="mono">${fmt(o.valor)}</strong>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+/* =========================================================================
+   8) RENDER — LANÇAMENTOS (lista bruta, editável)
+   ========================================================================= */
+function renderLancamentos(){
+  let list = entries.slice();
+  if(currentProfile !== "ambos") list = list.filter(e=> e.pessoa===currentProfile || e.pessoa==='ambos');
+  list.sort((a,b)=> new Date(b.data) - new Date(a.data));
+  const tbody = document.getElementById('entries-tbody');
+  document.getElementById('entries-empty').style.display = list.length===0 ? 'block':'none';
+  tbody.innerHTML = list.map(e=>`
+    <tr>
+      <td>${new Date(e.data).toLocaleDateString('pt-BR')}</td>
+      <td>${e.descricao}${e.recorrente?' <span class="pill">fixo</span>':''}${e.parcelas>1?` <span class="pill">${e.parcelas}x</span>`:''}</td>
+      <td>${catNome(e.categoria)}</td>
+      <td><span class="who-tag" style="background:var(--bg-elev2);color:var(--muted)">${e.pessoa==='p1'?cfg.nomeP1:e.pessoa==='p2'?cfg.nomeP2:e.pessoa==='terceiros'?'Terceiros':'Ambos'}</span></td>
+      <td class="amt">${fmt(e.valor)}</td>
+      <td class="row-actions">
+        <button onclick="window.editEntry('${e.id}')" title="Editar">✎</button>
+        <button onclick="window.deleteEntry('${e.id}')" title="Excluir">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+/* =========================================================================
+   9) MODAL — novo/editar lançamento
+   ========================================================================= */
+document.getElementById('btn-new-entry').addEventListener('click', ()=> openEntryModal());
+document.getElementById('entry-close').addEventListener('click', closeEntryModal);
+function openEntryModal(entry=null){
+  editingEntryId = entry ? entry.id : null;
+  document.getElementById('entry-modal-title').textContent = entry ? 'Editar lançamento' : 'Novo lançamento';
+  document.getElementById('f-desc').value = entry?.descricao || '';
+  document.getElementById('f-valor').value = entry?.valor || '';
+  document.getElementById('f-data').value = entry?.data || new Date().toISOString().slice(0,10);
+  document.getElementById('f-categoria').innerHTML = buildCategoriaOptionsHTML(entry?.categoria || categorias[0]?.id);
+  document.getElementById('f-pessoa').value = entry?.pessoa || 'ambos';
+  document.getElementById('f-parcelas').value = entry?.parcelas || 1;
+  document.getElementById('f-recorrente').checked = entry?.recorrente || false;
+  document.getElementById('entry-overlay').classList.add('show');
+}
+function closeEntryModal(){ document.getElementById('entry-overlay').classList.remove('show'); }
+
+document.getElementById('btn-save-entry').addEventListener('click', async ()=>{
+  const data = {
+    descricao: document.getElementById('f-desc').value.trim(),
+    valor: parseFloat(document.getElementById('f-valor').value)||0,
+    data: document.getElementById('f-data').value,
+    categoria: document.getElementById('f-categoria').value,
+    pessoa: document.getElementById('f-pessoa').value,
+    parcelas: parseInt(document.getElementById('f-parcelas').value)||1,
+    recorrente: document.getElementById('f-recorrente').checked
+  };
+  if(!data.descricao || !data.valor || !data.data){ showToast("Preencha descrição, valor e data."); return; }
+  if(editingEntryId){
+    await setDoc(doc(db,"lancamentos", editingEntryId), data);
+    showToast("Lançamento atualizado.");
+  } else {
+    await addDoc(collection(db,"lancamentos"), data);
+    showToast("Lançamento adicionado.");
+  }
+  closeEntryModal();
+});
+
+window.editEntry = (id)=>{
+  const e = entries.find(x=>x.id===id);
+  if(e) openEntryModal(e);
+};
+window.deleteEntry = async (id)=>{
+  if(confirm("Excluir este lançamento?")){
+    await deleteDoc(doc(db,"lancamentos", id));
+    showToast("Lançamento excluído.");
+  }
+};
+
+/* =========================================================================
+   10) IMPORTAÇÃO CSV
+   Formato esperado (cabeçalho na 1ª linha):
+   data,descricao,valor,categoria,pessoa,parcelas,recorrente
+   data: AAAA-MM-DD | categoria: essencial/vida/investimento/divida
+   pessoa: p1/p2/ambos | recorrente: sim/nao
+   ========================================================================= */
+document.getElementById('btn-import').addEventListener('click', ()=> document.getElementById('file-import').click());
+document.getElementById('file-import').addEventListener('change', async (ev)=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  const text = await file.text();
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  const header = lines[0].split(',').map(h=>h.trim().toLowerCase());
+  let count = 0;
+  for(let i=1;i<lines.length;i++){
+    const cols = lines[i].split(',');
+    const row = {};
+    header.forEach((h,idx)=> row[h] = (cols[idx]||'').trim());
+    if(!row.data || !row.valor) continue;
+    const entry = {
+      data: row.data,
+      descricao: row.descricao || 'Importado',
+      valor: parseFloat(row.valor.replace(',','.'))||0,
+      categoria: categorias.some(c=>c.id===row.categoria) ? row.categoria : (categorias[0]?.id || 'essencial'),
+      pessoa: ['p1','p2','ambos','terceiros'].includes(row.pessoa) ? row.pessoa : 'ambos',
+      parcelas: parseInt(row.parcelas)||1,
+      recorrente: (row.recorrente||'').toLowerCase()==='sim'
+    };
+    await addDoc(collection(db,"lancamentos"), entry);
+    count++;
+  }
+  showToast(`${count} lançamento(s) importado(s).`);
+  ev.target.value = '';
+});
+
+/* ---- Conversor: fatura Inter (.csv) ---- */
+function normalizeEstablishment(desc){
+  let base = desc.split(/\s{2,}/)[0]; // corta antes de "  CIDADE   BRA"
+  base = base.replace(/[^A-Za-zÀ-ÿ0-9\s]/g,'').trim().toUpperCase();
+  return base || 'DESCONHECIDO';
+}
+function sanitizeDocId(key){
+  return (key.replace(/\s+/g,'_').replace(/[^A-Za-z0-9_]/g,'').slice(0,120)) || 'ESTAB';
+}
+function hashId(str){
+  let h = 5381;
+  for(let i=0;i<str.length;i++){ h = ((h*33) ^ str.charCodeAt(i)) >>> 0; }
+  return h.toString(36);
+}
+
+function parseInterFatura(text){
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  const out = [];
+  for(let i=1;i<lines.length;i++){ // pula cabeçalho
+    const fields = [...lines[i].matchAll(/"([^"]*)"/g)].map(m=>m[1]);
+    if(fields.length < 5) continue;
+    const [dataBr, lanc, catInter, tipo, valorBr] = fields;
+    if(valorBr.trim().startsWith('-')) continue; // pagamento da fatura, não é gasto novo
+    const valor = parseFloat(valorBr.replace('R$','').replace(/\./g,'').replace(',','.').trim());
+    if(!valor || isNaN(valor)) continue;
+    const [dd,mm,yyyy] = dataBr.split('/');
+    if(!dd||!mm||!yyyy) continue;
+    let parcelas = 1;
+    const m = tipo.match(/Parcela\s+(\d+)\/(\d+)/i);
+    if(m){ parcelas = Math.max(1, parseInt(m[2]) - parseInt(m[1]) + 1); }
+    const descricao = lanc.replace(/\s{2,}/g,' ').trim();
+    out.push({
+      descricao, valor, data: `${yyyy}-${mm}-${dd}`,
+      categoria: null, pessoa: 'ambos', parcelas, recorrente: false,
+      _estKey: sanitizeDocId(normalizeEstablishment(lanc)),
+      _estExample: descricao,
+      _dedupeId: 'inter_' + hashId(`${dataBr}|${lanc}|${valorBr}|${tipo}`)
+    });
+  }
+  return out;
+}
+
+let pendingImport = null;   // todos os lançamentos deste arquivo
+let pendingVarRows = [];    // linhas de estabelecimentos "variáveis" que ainda precisam de categoria individual
+
+document.getElementById('btn-import-inter').addEventListener('click', ()=> document.getElementById('file-import-inter').click());
+document.getElementById('file-import-inter').addEventListener('change', async (ev)=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  const text = await file.text();
+  let parsed = [];
+  try{ parsed = parseInterFatura(text); }
+  catch(e){ console.error(e); showToast('Não consegui ler esse arquivo. Confira se é o CSV exportado do Inter.'); ev.target.value=''; return; }
+  ev.target.value = '';
+  if(parsed.length === 0){ showToast('Nenhum lançamento novo encontrado nesse arquivo.'); return; }
+  await handleImportedRows(parsed);
+});
+
+async function handleImportedRows(parsed){
+  const estSnap = await getDocs(collection(db,'estabelecimentos'));
+  const estMap = {};
+  estSnap.forEach(d=> estMap[d.id] = d.data());
+
+  const newKeys = {};   // estabelecimentos nunca vistos — precisa decidir fixo/variável
+  pendingVarRows = [];  // estabelecimentos já marcados como variável — cada linha vai para categorização individual
+
+  parsed.forEach(row=>{
+    const info = estMap[row._estKey];
+    if(!info){
+      if(!newKeys[row._estKey]) newKeys[row._estKey] = row._estExample;
+    } else if(info.tipo === 'variavel'){
+      pendingVarRows.push(row);
+    } else {
+      row.categoria = info.categoria;
+    }
+  });
+
+  pendingImport = parsed;
+
+  if(Object.keys(newKeys).length > 0){
+    openNewEstabModal(newKeys);
+  } else if(pendingVarRows.length > 0){
+    openVarTxnModal(pendingVarRows);
+  } else {
+    await finalizeImport(parsed);
+    pendingImport = null;
+  }
+}
+
+/* ---- Etapa 1: decidir se cada estabelecimento novo é fixo ou variável ---- */
+function openNewEstabModal(newKeys){
+  const list = document.getElementById('estab-list');
+  list.innerHTML = Object.entries(newKeys).map(([key,example])=>`
+    <div class="field" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px">
+      <label>${example}</label>
+      <div class="seg" style="margin:6px 0 10px">
+        <button type="button" class="tipo-btn active" data-key="${key}" data-tipo="fixo">Fixo</button>
+        <button type="button" class="tipo-btn" data-key="${key}" data-tipo="variavel">Variável</button>
+      </div>
+      <select data-estkey="${key}">${buildCategoriaOptionsHTML(categorias[1]?.id || categorias[0]?.id)}</select>
+    </div>`).join('');
+
+  list.querySelectorAll('.tipo-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const key = btn.dataset.key;
+      list.querySelectorAll(`.tipo-btn[data-key="${key}"]`).forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const sel = list.querySelector(`select[data-estkey="${key}"]`);
+      sel.style.display = btn.dataset.tipo === 'variavel' ? 'none' : 'block';
+    });
+  });
+
+  document.getElementById('estab-overlay').classList.add('show');
+}
+document.getElementById('estab-close').addEventListener('click', ()=>{
+  document.getElementById('estab-overlay').classList.remove('show');
+  pendingImport = null;
+});
+document.getElementById('btn-confirm-estab').addEventListener('click', async ()=>{
+  const list = document.getElementById('estab-list');
+  const keys = [...list.querySelectorAll('select[data-estkey]')].map(s=>s.dataset.estkey);
+  for(const key of keys){
+    const activeBtn = list.querySelector(`.tipo-btn.active[data-key="${key}"]`);
+    const tipo = activeBtn ? activeBtn.dataset.tipo : 'fixo';
+    if(tipo === 'variavel'){
+      await setDoc(doc(db,'estabelecimentos', key), { tipo: 'variavel' });
+      pendingImport.filter(r=>r._estKey===key).forEach(r=> pendingVarRows.push(r));
+    } else {
+      const categoria = list.querySelector(`select[data-estkey="${key}"]`).value;
+      await setDoc(doc(db,'estabelecimentos', key), { tipo: 'fixo', categoria });
+      pendingImport.filter(r=>r._estKey===key).forEach(r=> r.categoria = categoria);
+    }
+  }
+  document.getElementById('estab-overlay').classList.remove('show');
+
+  if(pendingVarRows.length > 0){
+    openVarTxnModal(pendingVarRows);
+  } else {
+    await finalizeImport(pendingImport);
+    pendingImport = null;
+  }
+});
+
+/* ---- Etapa 2: categorizar cada gasto de estabelecimentos variáveis ---- */
+function openVarTxnModal(rows){
+  const list = document.getElementById('estabvar-list');
+  list.innerHTML = rows.map((row,i)=>`
+    <div class="field" style="border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px">
+      <label>${new Date(row.data).toLocaleDateString('pt-BR')} · ${row.descricao} · <span class="mono">${fmt(row.valor)}</span></label>
+      <select data-rowidx="${i}">${buildCategoriaOptionsHTML(categorias[1]?.id || categorias[0]?.id)}</select>
+    </div>`).join('');
+  document.getElementById('estabvar-overlay').classList.add('show');
+}
+document.getElementById('estabvar-close').addEventListener('click', ()=>{
+  document.getElementById('estabvar-overlay').classList.remove('show');
+  pendingImport = null;
+});
+document.getElementById('btn-confirm-estabvar').addEventListener('click', async ()=>{
+  const selects = document.querySelectorAll('#estabvar-list select');
+  selects.forEach(sel=>{
+    const idx = parseInt(sel.dataset.rowidx);
+    pendingVarRows[idx].categoria = sel.value;
+  });
+  document.getElementById('estabvar-overlay').classList.remove('show');
+  await finalizeImport(pendingImport);
+  pendingImport = null;
+});
+
+async function finalizeImport(parsed){
+  const existingIds = new Set(entries.map(e=>e.id));
+  let novos = 0, repetidos = 0;
+  for(const row of parsed){
+    const id = row._dedupeId;
+    const isNew = !existingIds.has(id);
+    const { _estKey, _estExample, _dedupeId, ...clean } = row;
+    if(!clean.categoria) clean.categoria = categorias[1]?.id || categorias[0]?.id || 'vida';
+    await setDoc(doc(db,'lancamentos', id), clean);
+    if(isNew) novos++; else repetidos++;
+  }
+  showToast(`${novos} lançamento(s) novo(s) importado(s)${repetidos>0?`, ${repetidos} já existiam e foram atualizados`:''}.`);
+}
+
+document.getElementById('btn-whatsapp-info').addEventListener('click', ()=> document.getElementById('whatsapp-overlay').classList.add('show'));
+document.getElementById('whatsapp-close').addEventListener('click', ()=> document.getElementById('whatsapp-overlay').classList.remove('show'));
+
+/* =========================================================================
+   11) TOAST
+   ========================================================================= */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> t.style.display='none', 2600);
+}
+</script>
+</body>
+</html>
