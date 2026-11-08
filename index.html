@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nós Dois — Finanças</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12151a;--bg-elev:#1a1f27;--bg-elev2:#222833;--line:#2c3441;--text:#e8ecf2;--muted:#8b95a7;
+  --teal:#2dd4bf;--teal-soft:rgba(45,212,191,.14);--amber:#f0b849;--coral:#f2765c;--violet:#9d8cf2;--radius:14px}
+:root[data-theme="light"]{--bg:#f4f6f9;--bg-elev:#fff;--bg-elev2:#eef1f5;--line:#dde2ea;--text:#1b2230;--muted:#667085;
+  --teal:#0f9f8e;--teal-soft:rgba(15,159,142,.12);--amber:#b7791f;--coral:#d9482b;--violet:#6d5bd0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:14px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:18px;margin:0}
+.sub{color:var(--muted);font-size:12px}
+.card{background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.kpi .l{color:var(--muted);font-size:12px;font-weight:600}
+.kpi .v{font-size:22px;font-weight:700;margin-top:4px}
+.kpi .s{color:var(--muted);font-size:11.5px;margin-top:2px}
+.month-picker{display:inline-flex;align-items:center;gap:10px;background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--bg-elev2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 12px}
+.btn.primary{background:var(--teal);color:#06201c;border-color:var(--teal);font-weight:700}
+.row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.bar{height:8px;background:var(--bg-elev2);border-radius:5px;overflow:hidden;margin:5px 0 10px}
+.bar>i{display:block;height:100%}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;background:var(--bg-elev2);color:var(--muted);font-weight:600}
+.pill.pago{background:var(--teal-soft);color:var(--teal)}
+.pill.atrasado{background:rgba(242,118,92,.15);color:var(--coral)}
+.pill.aguardando{background:rgba(240,184,73,.15);color:var(--amber)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.two{grid-template-columns:1fr}.wrap{padding:12px}}
+input{font:inherit;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);width:100%}
+.login{max-width:340px;margin:12vh auto}
+.login input{margin-bottom:10px}
+.empty{color:var(--muted);text-align:center;padding:30px 10px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+td,th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:11.5px}
+td.r,th.r{text-align:right}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+/* ===== Dados vindos da planilha (Firestore: coleção "planilha") =====
+   planilha/meta        { enviadoEm, linhas, anos }
+   planilha/lanc_AAAA   { json: "[ {plano,cat,desc,tipo,pag,dest,parc,valor,compra,venc,pgto,terc,status,ano,mes,ajust,sem} ]" }
+   planilha/orcamento   { json: "[ {plano,valor,ano,mes,pct} ]" }                                  */
+const monthNames=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const fmt=n=>(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const $app=document.getElementById('app');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dbr=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'—';
+
+let lancs=[], orc=[], meta=null;
+let cur=new Date(); cur=new Date(cur.getFullYear(),cur.getMonth(),1);
+
+function statusDe(l){ // recalculado aqui, para não depender do dia em que o Excel foi calculado
+  if(l.pgto) return 'Pago';
+  return (l.venc && l.venc < todayStr()) ? 'Atrasado' : 'Aguardando';
+}
+function setData(docs){
+  lancs=[]; orc=[]; meta=null;
+  docs.forEach(d=>{
+    try{
+      if(d.id==='meta') meta=d.data;
+      else if(d.id==='orcamento') orc=JSON.parse(d.data.json||'[]');
+      else if(d.id.startsWith('lanc_')) lancs=lancs.concat(JSON.parse(d.data.json||'[]'));
+    }catch(e){console.error(e)}
+  });
+  lancs.forEach(l=>{l.st=statusDe(l);});
+}
+
+/* ===== Visão do mês ===== */
+function renderMes(){
+  const y=cur.getFullYear(), m=cur.getMonth()+1;
+  const doMes=lancs.filter(l=>l.ano===y&&l.mes===m&&l.terc!=='Sim');
+  const rec=doMes.filter(l=>l.plano==='Receitas');
+  const des=doMes.filter(l=>l.plano!=='Receitas');
+  const soma=a=>a.reduce((s,l)=>s+l.valor,0);
+  const recTot=soma(rec), recOk=soma(rec.filter(l=>l.st==='Pago'));
+  const desTot=soma(des), desOk=soma(des.filter(l=>l.st==='Pago'));
+  const atras=des.filter(l=>l.st==='Atrasado');
+  const sobra=recTot-desTot;
+
+  // plano de contas x meta (% da divisão × receita do mês)
+  const planos=['Essenciais','Estilo de Vida','Investimentos','Empréstimos/Dívidas'];
+  const pctDe=p=>{const r=orc.filter(o=>o.plano===p).sort((a,b)=>(b.ano*100+b.mes)-(a.ano*100+a.mes))[0];return r?r.pct:0};
+  const planoHtml=planos.map(p=>{
+    const g=soma(des.filter(l=>l.plano===p)), meta=pctDe(p)*recTot;
+    const pct=meta>0?Math.min(100,g/meta*100):(g>0?100:0), estoura=meta>0&&g>meta||(meta===0&&g>0&&p!=='Empréstimos/Dívidas'&&false);
+    return `<div><div class="row" style="border:0;padding-bottom:0"><span>${p}</span><span class="mono">${fmt(g)} <span class="sub">${meta>0?'de '+fmt(meta):''}</span></span></div>
+      <div class="bar"><i style="width:${pct}%;background:${estoura?'var(--coral)':'var(--teal)'}"></i></div></div>`;
+  }).join('');
+
+  const agrupa=(arr,fn)=>{const o={};arr.forEach(l=>{const k=fn(l)||'—';o[k]=(o[k]||0)+l.valor});return Object.entries(o).sort((a,b)=>b[1]-a[1])};
+  const cats=agrupa(des,l=>l.cat), maxC=cats[0]?cats[0][1]:1;
+  const catHtml=cats.map(([k,v])=>`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>${esc(k)}</span><span class="mono">${fmt(v)}</span></div><div class="bar" style="margin:4px 0 0"><i style="width:${v/maxC*100}%;background:var(--violet)"></i></div></div>`).join('')||'<div class="empty">Sem despesas neste mês</div>';
+
+  const pend=agrupa(des.filter(l=>l.st!=='Pago'),l=>l.dest);
+  const pendHtml=pend.map(([k,v])=>`<div class="row"><span>${esc(k)}</span><span class="mono">${fmt(v)}</span></div>`).join('')||'<div class="empty">Nada pendente 🎉</div>';
+
+  const lista=[...doMes].sort((a,b)=>(a.pgto||a.venc).localeCompare(b.pgto||b.venc)).map(l=>`<tr>
+    <td>${dbr(l.pgto||l.venc)}</td><td>${esc(l.desc)}<div class="sub">${esc(l.cat)} · ${esc(l.dest)}${l.parc&&l.parc!=='-'?' · '+esc(l.parc):''}</div></td>
+    <td><span class="pill ${l.st.toLowerCase()}">${l.st}</span></td>
+    <td class="r mono" style="color:${l.plano==='Receitas'?'var(--teal)':'var(--text)'}">${l.plano==='Receitas'?'+ ':''}${fmt(l.valor)}</td></tr>`).join('');
+
+  return `
+  <div class="grid">
+    <div class="kpi"><div class="l">Receitas</div><div class="v mono" style="color:var(--teal)">${fmt(recTot)}</div><div class="s">${fmt(recOk)} já recebido</div></div>
+    <div class="kpi"><div class="l">Despesas</div><div class="v mono">${fmt(desTot)}</div><div class="s">${fmt(desOk)} pago · ${fmt(desTot-desOk)} a pagar</div></div>
+    <div class="kpi"><div class="l">Sobra prevista</div><div class="v mono" style="color:${sobra>=0?'var(--teal)':'var(--coral)'}">${fmt(sobra)}</div><div class="s">receitas − despesas do mês</div></div>
+    <div class="kpi"><div class="l">Atrasado</div><div class="v mono" style="color:${atras.length?'var(--coral)':'var(--muted)'}">${fmt(soma(atras))}</div><div class="s">${atras.length} conta(s)</div></div>
+  </div>
+  <div class="two">
+    <div class="card"><h3>Plano de contas (meta = % da receita do mês)</h3>${planoHtml}</div>
+    <div class="card"><h3>A pagar por destinatário</h3>${pendHtml}</div>
+  </div>
+  <div class="card"><h3>Despesas por categoria</h3>${catHtml}</div>
+  <div class="card"><h3>Lançamentos de ${monthNames[m-1]} (${doMes.length})</h3>
+    <div class="scroll"><table><thead><tr><th>Dia</th><th>Descrição</th><th>Status</th><th class="r">Valor</th></tr></thead><tbody>${lista}</tbody></table></div>
+  </div>`;
+}
+
+function renderApp(){
+  const y=cur.getFullYear(), m=cur.getMonth();
+  const env=meta&&meta.enviadoEm?new Date(meta.enviadoEm):null;
+  const envTxt=env?`Planilha enviada em ${env.toLocaleDateString('pt-BR')} às ${env.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} · ${meta.linhas} lançamentos`:'';
+  $app.innerHTML=`<div class="wrap">
+    <header class="top">
+      <div><h1>Nós Dois — Finanças</h1><div class="sub">${envTxt||'Aguardando o primeiro envio da planilha'}</div></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="month-picker"><button class="btn" id="prev">‹</button><strong style="min-width:130px;text-align:center">${monthNames[m][0].toUpperCase()+monthNames[m].slice(1)} ${y}</strong><button class="btn" id="next">›</button></div>
+        <button class="btn" id="theme">◐</button>
+      </div>
+    </header>
+    ${lancs.length?renderMes():`<div class="card empty">Nenhum dado ainda.<br>Abra a planilha no notebook e clique no botão <strong>Enviar para o site</strong>.</div>`}
+  </div>`;
+  document.getElementById('prev').onclick=()=>{cur=new Date(y,m-1,1);renderApp()};
+  document.getElementById('next').onclick=()=>{cur=new Date(y,m+1,1);renderApp()};
+  document.getElementById('theme').onclick=()=>{const l=document.documentElement.getAttribute('data-theme')==='light';
+    if(l)document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme','light');
+    try{localStorage.setItem('tema',l?'dark':'light')}catch(e){}};
+}
+try{if(localStorage.getItem('tema')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}
+
+/* ===== Entrada: demo (testes) ou Firebase ===== */
+if(window.__DEMO__){
+  setData(window.__DEMO__); renderApp();
+}else{
+  const V='10.13.0';
+  const [{initializeApp},{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut},{getFirestore,collection,onSnapshot}]=await Promise.all([
+    import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`),
+    import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`),
+    import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`)]);
+  const app=initializeApp({apiKey:"AIzaSyDD1EAAO6wrSKj2mDtyNcnJz9mLI7hW_kg",authDomain:"financas-pessoais-1a8c2.firebaseapp.com",projectId:"financas-pessoais-1a8c2"});
+  const auth=getAuth(app), db=getFirestore(app);
+  let unsub=null;
+  const loginView=(erro)=>{ $app.innerHTML=`<div class="login card"><h1 style="margin-bottom:14px">Nós Dois — Finanças</h1>
+    <input id="em" type="email" placeholder="E-mail" autocomplete="username"><input id="pw" type="password" placeholder="Senha" autocomplete="current-password">
+    <button class="btn primary" id="go" style="width:100%">Entrar</button><div style="color:var(--coral);margin-top:10px;font-size:12.5px">${erro||''}</div></div>`;
+    document.getElementById('go').onclick=async()=>{ try{await signInWithEmailAndPassword(auth,document.getElementById('em').value.trim(),document.getElementById('pw').value)}catch(e){loginView('E-mail ou senha incorretos.')} }; };
+  onAuthStateChanged(auth,user=>{
+    if(unsub){unsub();unsub=null}
+    if(!user){loginView();return}
+    unsub=onSnapshot(collection(db,'planilha'),snap=>{ setData(snap.docs.map(d=>({id:d.id,data:d.data()}))); renderApp(); },
+      err=>{ $app.innerHTML=`<div class="wrap"><div class="card">Não foi possível ler os dados (${esc(err.code||err.message)}).</div></div>`; });
+  });
+}
+</script>
+</body>
+</html>
